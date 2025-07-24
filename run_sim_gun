@@ -1,0 +1,98 @@
+#!/bin/bash
+# Usage: run_sim_gun <nevents> <proc>
+set -o errexit
+
+# Setup environment
+export DETECTOR_PATH=$EIC_SHELL_PREFIX/share/solid
+export JANA_HOME=$EIC_SHELL_PREFIX
+export JANA_PLUGIN_PATH=$EIC_SHELL_PREFIX/lib/solid_recon/plugins
+
+# Input simulation parameters
+num_events=$1
+j=$2
+particle="e-"
+theta_min=12 # in degrees
+theta_max=13 # in degrees
+phi_min=0 # in degrees
+phi_max=360 # in degrees 
+mom_min=1 # in GeV
+mom_max=10 # in GeV
+min_e=$(echo "$mom_min * 0.02" | bc)
+physics_list="FTFP_BERT"  # FTFP_BERT_HP not working on Geant4 v11.01.p2
+
+OUTDIR=$EIC_SHELL_PREFIX/../analysis/data
+mkdir -p ${OUTDIR}
+
+# Output file names
+compact_file=${DETECTOR_PATH}/solid.xml
+info_string="${particle}_mom_${mom_min}_${mom_max}GeV_theta_${theta_min}_${theta_max}deg-$j"
+sim_file="${OUTDIR}/sim_${info_string}.root"
+rec_file="${OUTDIR}/rec_${info_string}.root"
+
+# Running simulation
+cd ../solid_dd4hep
+ddsim --runType batch \
+      -v WARNING \
+      --part.minimalKineticEnergy "${min_e}*GeV" \
+      --physics.list "${physics_list}" \
+      --physics.rangecut "None" \
+      --numberOfEvents ${num_events} \
+      --compactFile ${compact_file} \
+      --enableGun \
+      --gun.particle "${particle}" \
+      --gun.multiplicity 1 \
+      --gun.position "0,0,-350*cm" \
+      --gun.thetaMin "${theta_min}*deg" \
+      --gun.thetaMax "${theta_max}*deg" \
+      --gun.distribution "cos(theta)" \
+      --gun.momentumMin "${mom_min}*GeV" \
+      --gun.momentumMax "${mom_max}*GeV" \
+      --outputFile ${sim_file}
+
+# Running JANA
+# bFieldInZ = 1.377 T = 1.377/1000 kT = 1.377/1000 * 0.299792458 GeV/[e*mm]
+cd ../solid_dd4hep
+solid_recon -Pjana:debug_plugin_loading=1 \
+            -Pjana:nevents=${num_events} \
+            -Pacts:MaterialMap=scripts/material_map/material-map.cbor \
+            -Pacts:loglevel="info" \
+            -PJEventProcessorPODIO:loglevel="info" \
+            -Ptracking:CentralTrackTruthSeeds:maxVertexZ="3700" \
+            -Ptracking:CentralTrackSeedingResults:rMin="150" \
+            -Ptracking:CentralTrackSeedingResults:rMax="1500" \
+            -Ptracking:CentralTrackSeedingResults:rMinMiddle="150" \
+            -Ptracking:CentralTrackSeedingResults:rMaxMiddle="1500" \
+            -Ptracking:CentralTrackSeedingResults:zMin="-1800" \
+            -Ptracking:CentralTrackSeedingResults:zMax="1000" \
+            -Ptracking:CentralTrackSeedingResults:impactMax="100" \
+            -Ptracking:CentralTrackSeedingResults:collisionRegionMin="-3600" \
+            -Ptracking:CentralTrackSeedingResults:collisionRegionMax="-3400" \
+            -Ptracking:CentralTrackSeedingResults:bFieldInZ="0.000412949" \
+            -Ptracking:CentralCKFTrajectories:Chi2CutOff="15" \
+            -Ptracking:CentralCKFTrajectories:NumMeasurementsCutOff="10" \
+            -Ptracking:CentralTrackingRecHits:loglevel="info" \
+            -Ptracking:CentralTrackingRawHitAssociations:loglevel="info" \
+            -Ptracking:CentralTrackerMeasurements:loglevel="info" \
+            -Ptracking:CentralTrackTruthSeeds:loglevel="info" \
+            -Ptracking:CentralCKFTruthSeededTrajectories:loglevel="debug" \
+            -Ptracking:CentralCKFTruthSeededTracksUnfiltered:loglevel="info" \
+            -Ptracking:TruthSeededAmbiguityResolutionSolver:loglevel="info" \
+            -Ptracking:CentralCKFTruthSeededTracks:loglevel="info" \
+            -Ptracking:CentralTrackSeedingResults:loglevel="info" \
+            -Ptracking:CentralCKFTrajectories:loglevel="debug" \
+            -Ptracking:CentralCKFTracksUnfiltered:loglevel="info" \
+            -Ptracking:AmbiguityResolutionSolver:loglevel="info" \
+            -Ptracking:CentralCKFTracks:loglevel="info" \
+            -Ptracking:CentralTrackSegments:loglevel="info" \
+            -Ptracking:CentralTrackVertices:loglevel="info" \
+            -Ptracking:CalorimeterTrackPropagator:loglevel="info" \
+            -Ptracking:CombinedTracks:loglevel="info" \
+            -Ptracking:ChargedTruthSeededParticlesWithAssociations:loglevel="info" \
+            -Ptracking:ChargedParticlesWithAssociations:loglevel="info" \
+            -PLAEC:LAEC_ShIslandProtoClusters:loglevel="error" \
+            -PLAEC:LAEC_PrShIslandProtoClusters:loglevel="error" \
+            -PFAEC:FAEC_ShIslandProtoClusters:loglevel="error" \
+            -PFAEC:FAEC_PrShIslandProtoClusters:loglevel="error" \
+            -Pdd4hep:xml_files=${compact_file} \
+            -Ppodio:output_file=${rec_file} \
+            ${sim_file}
