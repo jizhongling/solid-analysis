@@ -6,6 +6,8 @@ To run the script, use EIC container version 25.05-stable and run
 
 ```bash
 ./eic-shell -v 25.05-stable
+export PATH=$EIC_SHELL_PREFIX/bin:$PATH
+export LD_LIBRARY_PATH=$EIC_SHELL_PREFIX/lib:/opt/local/lib:/opt/local/lib64
 cd solid-analysis
 ./run_sim_gun <nevents> <index>
 ```
