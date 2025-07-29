@@ -13,8 +13,9 @@ cd solid-analysis
 ```
 
 Step by step to run the SoLID simulation software:
-
-- Run the EIC container version 25.05-stable by the `eic-shell` command shown above.
+- Install the `eic-shell` by `curl --location https://get.epic-eic.org | bash`
+- Update the `eic-shell` by `./eic-shell -u -v 25.05-stable`
+- Run the EIC container version 25.05-stable by the `./eic-shell -v 25.05-stable`
 - Git clone the software [solid_dd4hep](https://github.com/jizhongling/solid_dd4hep) and [solid_recon](https://github.com/jizhongling/solid_recon).
 - Compile [solid_dd4hep](https://github.com/jizhongling/solid_dd4hep) and [solid_recon](https://github.com/jizhongling/solid_recon) as shown in their repositories.
 - Run the script `run_sim_gun` as shown above. This script will run the solid_dd4hep and solid_recon in sequence.
