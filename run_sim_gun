@@ -5,7 +5,7 @@ set -o errexit
 # Setup environment
 export DETECTOR_PATH=$EIC_SHELL_PREFIX/share/solid
 export JANA_HOME=$EIC_SHELL_PREFIX
-export JANA_PLUGIN_PATH=$EIC_SHELL_PREFIX/lib/solid_recon/plugins
+export JANA_PLUGIN_PATH=$EIC_SHELL_PREFIX/lib/solid_recon/plugins:$JANA_PLUGIN_PATH
 
 # Input simulation parameters
 num_events=$1
