@@ -68,7 +68,7 @@ void AnaClusters(const Int_t proc = 0)
     {
       events->GetEntry(i);
       // Check MCParticles for the index of the generated particle
-      ROOT::Math::XYZVector v3_pmc(pmc[0][2], pmc[1][2], pmc[2][2]);
+      ROOT::Math::XYZVector v3_pmc(pmc[0][0], pmc[1][0], pmc[2][0]);
       Double_t theta = v3_pmc.Theta() * 180. / TMath::Pi();
       if( theta < theta_min || theta > theta_max )
         continue;
